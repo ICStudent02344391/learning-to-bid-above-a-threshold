@@ -50,8 +50,6 @@ def get_optimal_mu(partition, tau, sigma, unif_range = False):
     :type tau: float positive
     :param sigma: standard deviation of the threshold distribution
     :type sigma: float positive
-    :param bsup: upper bound of the bids
-    :type bsup: float positive
     :param unif_range: indicator that the optimal range of bid is returned
     :type unif_range: boolean
     :returns: expectaction of the reward distribution and bound of the optimal bid distribution in the partition (if unif_range)
@@ -69,6 +67,8 @@ def get_optimal_mu(partition, tau, sigma, unif_range = False):
     # Test which is the best lower bound
     if get_mu(a0_star, a1_star, tau, sigma, bsup) < get_mu(a1_star, a1_star + increment, tau, sigma, bsup):
         a_star = a1_star
+    else:
+        a_star = a0_star
     if unif_range:
         return get_mu(a_star, a_star + increment, tau, sigma, bsup), (a_star, a_star + increment)
     else:

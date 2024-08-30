@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath("../src"))
 import helper_functions as func
 
 # Epsilon-Greedy algorithm
-def eps_greedy(tau, sigma, partition, seed = None, itermax = 5e4):
+def eps_greedy(tau, sigma, partition, epsilon_t, seed = None, itermax = 5e4):
     """
     Epsilon-Greedy algorithm
     :param tau: mean of the threshold distribution
@@ -18,6 +18,8 @@ def eps_greedy(tau, sigma, partition, seed = None, itermax = 5e4):
     :type sigma: float positive
     :param partition: bounds of the bids
     :type partition: numpy.ndarray
+    :param epsilon_t: ratio exploration/exploitation given the round
+    :type epsilon_t: function of t (round number) and J (number of arms)
     :param seed: random seed
     :type seed: int
     :param itermax: maximum number of rounds
@@ -25,17 +27,6 @@ def eps_greedy(tau, sigma, partition, seed = None, itermax = 5e4):
     :returns: list of selected arms, array of empirical average rewards for each arm, 
     array of counts for each arm, arm with the greatest empirical average reward
     """
-    def epsilon_t(t, J):
-        """
-        Exploration / exploitation strategy
-        :param t: round
-        :type t: int
-        :param J: arm number
-        :type J: int
-        :returns: exploration / exploitation ratio
-        :rtype: float
-        """
-        return t**(-1/3)*(J * np.log(t))**(1/3)
     rndm.seed(seed)
     J = len(partition) - 1 # am number
     avg_arm_reward = np.zeros(J) # array of empirical average rewards
@@ -111,9 +102,9 @@ def UCB_algorithm(tau, sigma, partition, delta, seed = None, itermax = 5e4, bern
         arm_count[j] += 1 # update the count of arm j
         rew = func.reward(bid, threshold) # get the reward
         avg_arm_reward[j] = ((arm_count[j] - 1) * avg_arm_reward[j] + rew) / arm_count[j] # update empirical average reward of arm j
-        dict_rewards[f"arm_{j}"] = [rew] # update the rewards of arm j
         selected_arm.append(j) # arm j selected at round j
         if bernstein:
+            dict_rewards[f"arm_{j}"] = [rew] # update the rewards of arm j
             arm_ucb[j] = avg_arm_reward[j] + bound_reward[j] * constant_bernstein_2 # Compute the Bernstein's bound for arm j
         else:
             arm_ucb[j] = avg_arm_reward[j] + bound_reward[j] * np.sqrt(constant_hoeffding) # Compute the Hoeffding's bound for arm j
@@ -125,9 +116,9 @@ def UCB_algorithm(tau, sigma, partition, delta, seed = None, itermax = 5e4, bern
         arm_count[arm_index] += 1 # update the count of the arm
         rew = func.reward(bid, threshold) # get the reward
         avg_arm_reward[arm_index] = ((arm_count[arm_index] - 1) * avg_arm_reward[arm_index] + rew) / arm_count[arm_index] # update the empirical average reward
-        dict_rewards[f"arm_{arm_index}"] = [rew] # update the rewards of the arm
         selected_arm.append(arm_index) # the arm is selected at round t
         if bernstein:
+            dict_rewards[f"arm_{arm_index}"] = [rew] # update the rewards of the arm
             if not oracle:
                 arm_std = np.array(dict_rewards[f"arm_{arm_index}"]).std() # get the empirical standard deviation
             else:
@@ -300,3 +291,5 @@ def sequential_halving_algorithm(tau, sigma, partition, delta, seed = None, iter
         return selected_arm, avg_arm_reward, arm_count, (left_index, mid_index, right_index), right_index, t
     if descending:
         return selected_arm, avg_arm_reward, arm_count, (left_index, mid_index, right_index), left_index, t
+    else:
+        return selected_arm, avg_arm_reward, arm_count, (left_index, mid_index, right_index), mid_index, t
